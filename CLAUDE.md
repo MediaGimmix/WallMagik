@@ -1,4 +1,4 @@
-# Wallpaper Launcher
+# WallMagik
 
 Kotlin + Jetpack Compose Android launcher that draws its own slideshow wallpaper (so the FiiO JM21 can't kill it),
 plus the same renderer as a system live wallpaper for the lock screen.

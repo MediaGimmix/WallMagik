@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "WallpaperLauncher"
+rootProject.name = "WallMagik"
 include(":app")

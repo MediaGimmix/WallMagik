@@ -115,7 +115,7 @@ fun SlideshowPage(onBack: () -> Unit, onOpenFolder: (String) -> Unit) {
 
     Page("Slideshow", onBack) {
         if (!granted) {
-            Note("Wallpaper Launcher needs access to your photos to find images.")
+            Note("WallMagik needs access to your photos to find images.")
             Button(onClick = { permLauncher.launch(ImageRepo.permission) }, modifier = Modifier.padding(16.dp)) {
                 Text("Allow photo access")
             }

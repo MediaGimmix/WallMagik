@@ -328,7 +328,7 @@ private fun SystemPage(onBack: () -> Unit) {
         }, modifier = Modifier.padding(horizontal = 16.dp)) { Text("Choose default home app") }
 
         Section("About")
-        Note("Wallpaper Launcher ${BuildConfig.VERSION_NAME}")
+        Note("WallMagik ${BuildConfig.VERSION_NAME}")
         Gap()
     }
 }
