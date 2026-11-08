@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Wallpaper Launcher</string>
+    <string name="settings_name">Launcher Settings</string>
+    <string name="wallpaper_desc">Random slideshow from your folders, with blur and duotone. Shares settings with Wallpaper Launcher.</string>
+</resources>

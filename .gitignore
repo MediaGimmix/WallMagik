@@ -1,0 +1,41 @@
+# ---- Build output (Gradle, Kotlin, NDK/CMake) ----
+build/
+.gradle/
+.kotlin/
+.cxx/
+.externalNativeBuild/
+captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+output-metadata.json
+
+# ---- Machine-specific ----
+# env.sh points at your JDK/SDK; local.properties at your Android SDK.
+env.sh
+local.properties
+
+# ---- Signing keys: never commit ----
+*.jks
+*.keystore
+keystore.properties
+
+# ---- IDE / OS ----
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ---- Tooling ----
+.source-backups/
+.claude/settings.local.json
+# Private notes for Claude Code (device serials etc.)
+CLAUDE.local.md
+
+# ---- Old step-by-step setup scripts (removed from the repo) ----
+/add-*.sh
+/run-latest.sh
+/SETUP-NOTES.txt
