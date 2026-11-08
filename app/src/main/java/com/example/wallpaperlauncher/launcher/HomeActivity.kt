@@ -14,6 +14,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
+import com.example.wallpaperlauncher.AppState
 import com.example.wallpaperlauncher.gl.WallSurface
 import com.example.wallpaperlauncher.media.ImageRepo
 import com.example.wallpaperlauncher.settings.SettingsActivity
@@ -65,9 +66,23 @@ class HomeActivity : ComponentActivity() {
         super.onStop()
     }
 
+    private var hasFocus = false
+
+    override fun onWindowFocusChanged(focus: Boolean) {
+        super.onWindowFocusChanged(focus)
+        hasFocus = focus
+    }
+
     override fun onNewIntent(intent: Intent) {
+        // Same test Launcher3 uses: focused and not just brought back from another app = Home pressed on home.
+        val alreadyHome = hasFocus &&
+            (intent.flags and Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT) != Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT
         super.onNewIntent(intent)
-        if (intent.hasCategory(Intent.CATEGORY_HOME)) {
+        if (!intent.hasCategory(Intent.CATEGORY_HOME)) return
+        if (alreadyHome && AppState.config.value.homeOpensDrawer) {
+            if (drawerOpen.value) homePresses.intValue++
+            drawerOpen.value = !drawerOpen.value
+        } else {
             drawerOpen.value = false
             homePresses.intValue++
         }

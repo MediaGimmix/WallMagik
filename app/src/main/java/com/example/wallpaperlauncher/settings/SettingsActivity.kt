@@ -197,6 +197,9 @@ private fun GesturesPage(onBack: () -> Unit) {
         SwitchRow("Swipe down for notifications", cfg.swipeDownNotifications) { v ->
             AppState.update { it.copy(swipeDownNotifications = v) }
         }
+        SwitchRow("Home button toggles the app drawer", cfg.homeOpensDrawer, "Pressing Home while on the home screen opens the drawer; pressing it again closes it") { v ->
+            AppState.update { it.copy(homeOpensDrawer = v) }
+        }
         Note("Swipe up opens the app drawer. Press and hold shows chromatic aberration (Effects).")
     }
 }

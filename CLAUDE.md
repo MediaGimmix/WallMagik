@@ -24,6 +24,7 @@ Build with `source env.sh && ./gradlew --offline assembleDebug`. Same toolchain 
   backgrounds for "transparent icons". `AppsRepo` rebuilds icons when icon settings change.
 - Dock: empty slots are invisible on the home screen; dock apps are assigned in Settings → Home screen.
 - Chromatic aberration (hold) ignores the effects master switch; only its own switch gates it.
+- Home pressed while already home toggles the drawer (`HomeActivity.onNewIntent`, focus + BROUGHT_TO_FRONT test).
 - Next on wake: `App` registers an ACTION_SCREEN_ON receiver → `Slideshow.next()` when enabled.
 - `wallpaper/SlideWallpaperService`: live wallpaper engine, no touch.
 - `settings/`: `SettingsActivity` (page stack), categories: Slideshow (+ FolderPage), Effects, Gestures,

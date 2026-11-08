@@ -48,6 +48,7 @@ data class Config(
     // Gestures
     val gestures: Map<Gesture, GestureAction> = DEFAULT_GESTURES,
     val swipeDownNotifications: Boolean = true,
+    val homeOpensDrawer: Boolean = true,
     val showToggleHints: Boolean = true,
 
     // Home screen / dock
@@ -134,6 +135,7 @@ object AppState {
                     ?: d.action(g)
             },
             swipeDownNotifications = p.getBoolean("swipe_down_notifications", d.swipeDownNotifications),
+            homeOpensDrawer = p.getBoolean("home_opens_drawer", d.homeOpensDrawer),
             showToggleHints = p.getBoolean("toggle_hints", d.showToggleHints),
             dockSlots = p.getInt("dock_slots", d.dockSlots),
             dockApps = p.getString("dock_apps", null)?.split("\n") ?: d.dockApps,
@@ -170,6 +172,7 @@ object AppState {
             putBoolean("drawer_blur", c.drawerBlur)
             c.gestures.forEach { (g, a) -> putString("gesture_${g.name}", a.name) }
             putBoolean("swipe_down_notifications", c.swipeDownNotifications)
+            putBoolean("home_opens_drawer", c.homeOpensDrawer)
             putBoolean("toggle_hints", c.showToggleHints)
             putInt("dock_slots", c.dockSlots)
             putString("dock_apps", c.dockApps.joinToString("\n"))
