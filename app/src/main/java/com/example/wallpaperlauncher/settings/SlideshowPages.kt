@@ -1,5 +1,6 @@
 package com.example.wallpaperlauncher.settings
 
+import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -100,6 +101,17 @@ fun SlideshowPage(onBack: () -> Unit, onOpenFolder: (String) -> Unit) {
         granted = ok
         if (ok) ImageRepo.scan()
     }
+    val treeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            runCatching {
+                ctx.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            val tree = uri.toString()
+            AppState.update { c ->
+                c.copy(safFolders = c.safFolders + tree, selectedFolders = c.selectedFolders + (ImageRepo.SAF_PREFIX + tree))
+            }
+        }
+    }
 
     Page("Slideshow", onBack) {
         if (!granted) {
@@ -145,6 +157,10 @@ fun SlideshowPage(onBack: () -> Unit, onOpenFolder: (String) -> Unit) {
             }
         }
         Note("Tap the check to use a folder; tap the folder to pick images inside it.")
+        OutlinedButton(onClick = { treeLauncher.launch(null) }, modifier = Modifier.padding(horizontal = 16.dp)) {
+            Text("Add folder…")
+        }
+        Note("Add folder reads a folder directly, so it also works for folders with a .nomedia file and on SD cards.")
         if (granted && folders.isEmpty() && !scanning) Note("No images found on this device.")
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
@@ -263,6 +279,19 @@ fun FolderPage(bucketId: String, onBack: () -> Unit) {
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Column {
                     if (folder != null && folder.path.isNotEmpty()) Note(folder.path)
+                    if (bucketId.startsWith(ImageRepo.SAF_PREFIX)) {
+                        val ctx = LocalContext.current
+                        OutlinedButton(onClick = {
+                            val tree = bucketId.removePrefix(ImageRepo.SAF_PREFIX)
+                            runCatching {
+                                ctx.contentResolver.releasePersistableUriPermission(
+                                    android.net.Uri.parse(tree), Intent.FLAG_GRANT_READ_URI_PERMISSION
+                                )
+                            }
+                            AppState.update { c -> c.copy(safFolders = c.safFolders - tree, selectedFolders = c.selectedFolders - bucketId) }
+                            onBack()
+                        }, modifier = Modifier.padding(horizontal = 16.dp)) { Text("Remove this added folder") }
+                    }
                     SwitchRow("Use this folder", selected, "$included of ${images.size} images included") { on ->
                         AppState.update { c -> c.copy(selectedFolders = if (on) c.selectedFolders + bucketId else c.selectedFolders - bucketId) }
                     }

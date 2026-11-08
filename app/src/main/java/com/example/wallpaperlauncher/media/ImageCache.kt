@@ -139,7 +139,14 @@ object Thumbs {
         return try {
             resolver.loadThumbnail(item.uri, Size(px, px), null).also { cache.put(item.id, it) }
         } catch (e: Exception) {
-            null
+            // Some document providers have no thumbnails: decode small instead.
+            try {
+                ImageDecoder.decodeBitmap(ImageDecoder.createSource(resolver, item.uri)) { d, info, _ ->
+                    d.setTargetSampleSize(maxOf(1, minOf(info.size.width, info.size.height) / px))
+                }.also { cache.put(item.id, it) }
+            } catch (e2: Exception) {
+                null
+            }
         }
     }
 }

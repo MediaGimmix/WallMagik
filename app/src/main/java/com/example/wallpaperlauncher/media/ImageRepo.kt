@@ -9,7 +9,11 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.provider.DocumentsContract
 import android.provider.MediaStore
+import com.example.wallpaperlauncher.AppState
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -61,9 +65,14 @@ object ImageRepo {
         if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_IMAGES
         else Manifest.permission.READ_EXTERNAL_STORAGE
 
+    const val SAF_PREFIX = "saf:"
+
     fun init(ctx: Context) {
         app = ctx.applicationContext
-        scan()
+        // Picked folders changed: rescan (the first emission does the initial scan).
+        CoroutineScope(SupervisorJob() + Dispatchers.Main).launch {
+            AppState.config.map { it.safFolders }.distinctUntilChanged().collect { scan() }
+        }
     }
 
     fun hasPermission(ctx: Context = app) =
@@ -78,8 +87,7 @@ object ImageRepo {
     }
 
     fun scan() {
-        if (!hasPermission()) return
-        if (!observerRegistered) {
+        if (hasPermission() && !observerRegistered) {
             observerRegistered = true
             app.contentResolver.registerContentObserver(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, observer
@@ -100,6 +108,61 @@ object ImageRepo {
     }
 
     private fun doScan() {
+        val items = ArrayList<ImageItem>()
+        val folders = ArrayList<Folder>()
+        if (hasPermission()) scanMediaStore(items, folders)
+        for (tree in AppState.config.value.safFolders) {
+            try { scanTree(Uri.parse(tree), items, folders) } catch (e: Exception) { Log.w(TAG, "tree scan failed: $tree", e) }
+        }
+        _images.value = items
+        _folders.value = folders.sortedBy { it.name.lowercase() }
+    }
+
+    /** Negative 64-bit id for a document so it never clashes with MediaStore's positive ids. */
+    private fun docId(s: String): Long {
+        var h = 1125899906842597L
+        for (ch in s) h = 31 * h + ch.code
+        return -(h and Long.MAX_VALUE) - 1
+    }
+
+    /**
+     * A folder picked with the system folder picker, read through the documents API: works even when MediaStore
+     * skips it (.nomedia) and on SD cards. Includes subfolders.
+     */
+    private fun scanTree(tree: Uri, items: MutableList<ImageItem>, folders: MutableList<Folder>) {
+        val cr = app.contentResolver
+        val bucket = SAF_PREFIX + tree
+        val rootId = DocumentsContract.getTreeDocumentId(tree)
+        val path = rootId.substringAfter(':')
+        val name = path.substringAfterLast('/').ifEmpty { rootId.substringBefore(':') }
+        val found = ArrayList<Pair<ImageItem, Long>>()
+        val pending = ArrayDeque(listOf(rootId))
+        val cols = arrayOf(
+            DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+            DocumentsContract.Document.COLUMN_MIME_TYPE,
+            DocumentsContract.Document.COLUMN_LAST_MODIFIED,
+        )
+        while (pending.isNotEmpty()) {
+            val parent = pending.removeFirst()
+            cr.query(DocumentsContract.buildChildDocumentsUriUsingTree(tree, parent), cols, null, null, null)?.use { c ->
+                while (c.moveToNext()) {
+                    val id = c.getString(0)
+                    val mime = c.getString(1) ?: ""
+                    if (mime == DocumentsContract.Document.MIME_TYPE_DIR) pending += id
+                    else if (mime.startsWith("image/")) {
+                        val uri = DocumentsContract.buildDocumentUriUsingTree(tree, id)
+                        found += ImageItem(docId(uri.toString()), bucket, uri) to c.getLong(2)
+                    }
+                }
+            }
+        }
+        if (found.isEmpty()) return
+        val sorted = found.sortedByDescending { it.second }.map { it.first }
+        items += sorted
+        folders += Folder(bucket, name, "Picked folder · $path", sorted.size, sorted.first())
+    }
+
+    private fun scanMediaStore(items: MutableList<ImageItem>, folders: MutableList<Folder>) {
         val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         val projection = arrayOf(
             MediaStore.Images.Media._ID,
@@ -110,7 +173,6 @@ object ImageRepo {
             MediaStore.Images.Media.WIDTH,
             MediaStore.Images.Media.HEIGHT,
         )
-        val items = ArrayList<ImageItem>()
         data class Acc(val name: String, val path: String, var count: Int, val cover: ImageItem)
         val buckets = LinkedHashMap<String, Acc>()
         app.contentResolver.query(
@@ -139,9 +201,7 @@ object ImageRepo {
                 } else acc.count++
             }
         }
-        _images.value = items
-        _folders.value = buckets.map { (id, a) -> Folder(id, a.name, a.path, a.count, a.cover) }
-            .sortedBy { it.name.lowercase() }
+        buckets.forEach { (id, a) -> folders += Folder(id, a.name, a.path, a.count, a.cover) }
     }
 
     fun imagesIn(bucketId: String): List<ImageItem> = _images.value.filter { it.bucketId == bucketId }

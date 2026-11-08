@@ -32,6 +32,7 @@ data class Config(
     val selectedFolders: Set<String> = emptySet(),
     val excludedImages: Set<Long> = emptySet(),
     val nextOnWake: Boolean = false,
+    val safFolders: Set<String> = emptySet(),   // folder tree URIs picked through the system picker
 
     // Effects
     val effectsEnabled: Boolean = true,
@@ -116,6 +117,7 @@ object AppState {
             intervalMs = p.getLong("interval_ms", d.intervalMs),
             transitionMs = p.getInt("transition_ms", d.transitionMs),
             nextOnWake = p.getBoolean("next_on_wake", d.nextOnWake),
+            safFolders = p.getStringSet("saf_folders", null)?.toSet() ?: d.safFolders,
             selectedFolders = p.getStringSet("folders", null)?.toSet() ?: d.selectedFolders,
             excludedImages = p.getStringSet("excluded", null)?.mapNotNull { it.toLongOrNull() }?.toSet()
                 ?: d.excludedImages,
@@ -158,6 +160,7 @@ object AppState {
             putLong("interval_ms", c.intervalMs)
             putInt("transition_ms", c.transitionMs)
             putBoolean("next_on_wake", c.nextOnWake)
+            putStringSet("saf_folders", c.safFolders)
             putStringSet("folders", c.selectedFolders)
             putStringSet("excluded", c.excludedImages.map { it.toString() }.toSet())
             putBoolean("effects", c.effectsEnabled)
