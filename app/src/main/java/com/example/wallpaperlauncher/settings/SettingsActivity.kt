@@ -115,7 +115,7 @@ private fun MainPage(onExit: () -> Unit, open: (String) -> Unit) {
         NavRow(Icons.Default.ThumbUp, "Gestures", "Taps, holds and swipes on the home screen") { open("gestures") }
         NavRow(Icons.Default.Home, "Home screen", "Dock apps, slots, icon size") { open("home") }
         NavRow(Icons.Default.Face, "Icons", "Icon packs, transparent icons") { open("icons") }
-        NavRow(Icons.AutoMirrored.Filled.List, "App drawer", "Columns, search, hidden apps") { open("drawer") }
+        NavRow(Icons.AutoMirrored.Filled.List, "App drawer", "Search, hidden apps") { open("drawer") }
         NavRow(Icons.Default.Lock, "Live wallpaper & system", "Lock screen, default launcher, about") { open("system") }
     }
 }
@@ -265,10 +265,6 @@ private fun HomePage(onBack: () -> Unit) {
 private fun DrawerPage(onBack: () -> Unit, onHidden: () -> Unit) {
     val cfg by AppState.config.collectAsStateWithLifecycle()
     Page("App drawer", onBack) {
-        SliderRow("Columns", cfg.drawerColumns.toFloat(), "${cfg.drawerColumns}", 3f..7f, steps = 3) { v ->
-            AppState.update { it.copy(drawerColumns = v.roundToInt()) }
-        }
-        SwitchRow("Labels", cfg.drawerLabels) { v -> AppState.update { it.copy(drawerLabels = v) } }
         SwitchRow("Open the keyboard", cfg.drawerAutoKeyboard, "Focus search when the drawer opens") { v ->
             AppState.update { it.copy(drawerAutoKeyboard = v) }
         }

@@ -212,7 +212,7 @@ private fun Dock(cfg: Config, apps: List<AppEntry>, modifier: Modifier) {
         cfg.dock().forEachIndexed { i, key ->
             val app = byKey[key]
             var menu by remember { mutableStateOf(false) }
-            var bounds by remember { mutableStateOf<Rect?>(null) }
+            val coords = remember { arrayOfNulls<androidx.compose.ui.layout.LayoutCoordinates>(1) }
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 if (app == null) {
                     // Empty slots keep their spot but show nothing; fill them in Settings → Home screen.
@@ -220,12 +220,12 @@ private fun Dock(cfg: Config, apps: List<AppEntry>, modifier: Modifier) {
                 } else Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .onGloballyPositioned { c ->
-                            val b = c.boundsInWindow()
-                            bounds = Rect(b.left.toInt(), b.top.toInt(), b.right.toInt(), b.bottom.toInt())
-                        }
+                        .onGloballyPositioned { coords[0] = it }
                         .combinedClickable(
-                            onClick = { AppsRepo.launch(ctx, app, bounds) },
+                            onClick = {
+                                val b = coords[0]?.takeIf { it.isAttached }?.boundsInWindow()
+                                AppsRepo.launch(ctx, app, b?.let { Rect(it.left.toInt(), it.top.toInt(), it.right.toInt(), it.bottom.toInt()) })
+                            },
                             onLongClick = { menu = true },
                         ),
                 ) {

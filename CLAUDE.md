@@ -2,7 +2,7 @@
 
 Kotlin + Jetpack Compose Android launcher that draws its own slideshow wallpaper (so the FiiO JM21 can't kill it),
 plus the same renderer as a system live wallpaper for the lock screen.
-Build with `source env.sh && ./gradlew --offline assembleDebug`. Same toolchain as ../AndroidMediaPlayer-Claude.
+Build with `source env.sh && ./gradlew --offline assembleRelease -x lintVitalAnalyzeRelease -x lintVitalReportRelease -x lintVitalRelease` (release = R8, debug-signed; debug builds are far too laggy to judge UI). Lint jars are not in the offline cache. Same toolchain as ../AndroidMediaPlayer-Claude.
 
 ## Constraints
 - No Google dependencies at runtime. Target: FiiO JM21 (Android 13, adb transport id, serial shows as "?"). minSdk 30.
@@ -19,7 +19,7 @@ Build with `source env.sh && ./gradlew --offline assembleDebug`. Same toolchain 
   Choreographer frames only while animating. `gl/WallRenderer`: crossfade, blur (per-image downsample + Gaussian
   computed once), duotone, chromatic aberration (hold). `gl/WallSurface`: glue used by both hosts.
 - `launcher/HomeActivity`: SurfaceView (wallpaper) + ComposeView (UI). `HomeScreen`: gestures, dock, hints.
-  `Gestures.kt`: `homeGestures` modifier + `TapClassifier`. `AppDrawer`: search, hide, long-press menu.
+  `Gestures.kt`: `homeGestures` modifier + `TapClassifier`. `AppDrawer`: text-only list (name on a faint pill), search, hide, long-press menu.
 - `launcher/IconPack`: ADW/Nova appfilter.xml packs (iconback/mask/upon fallback); `toIconBitmap` drops adaptive
   backgrounds for "transparent icons". `AppsRepo` rebuilds icons when icon settings change.
 - Dock: empty slots are invisible on the home screen; dock apps are assigned in Settings → Home screen.

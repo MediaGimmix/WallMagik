@@ -7,7 +7,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,10 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -51,6 +50,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
@@ -86,10 +87,10 @@ fun AppDrawer(
     var menu by remember { mutableStateOf(false) }
     val focus = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-    val grid = rememberLazyGridState()
+    val list = rememberLazyListState()
 
     LaunchedEffect(Unit) { if (cfg.drawerAutoKeyboard) runCatching { focus.requestFocus() } }
-    LaunchedEffect(resetKey) { query = ""; grid.scrollToItem(0) }
+    LaunchedEffect(resetKey) { query = ""; list.scrollToItem(0) }
 
     val q = query.trim()
     val shown = remember(apps, q, showHidden, cfg.hiddenApps, cfg.hiddenInSearch) {
@@ -177,64 +178,57 @@ fun AppDrawer(
             }
         }
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(cfg.drawerColumns.coerceIn(2, 8)),
-            state = grid,
+        LazyColumn(
+            state = list,
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier.fillMaxSize().nestedScroll(pullToClose),
         ) {
             items(shown, key = { it.key }) { a ->
-                DrawerIcon(
-                    app = a,
-                    hidden = a.key in cfg.hiddenApps,
-                    showLabel = cfg.drawerLabels,
-                    onLaunch = onLaunch,
-                    onAddToDock = onAddToDock,
-                )
+                DrawerItem(app = a, hidden = a.key in cfg.hiddenApps, onLaunch = onLaunch, onAddToDock = onAddToDock)
             }
         }
     }
 }
 
+private val ItemShape = RoundedCornerShape(10.dp)
+private val ItemBackground = Color.White.copy(alpha = 0.09f)
+
+/** Just the app's name on a faint background: cheap to draw and scroll. */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DrawerIcon(
+private fun DrawerItem(
     app: AppEntry,
     hidden: Boolean,
-    showLabel: Boolean,
     onLaunch: (AppEntry, Rect?) -> Unit,
     onAddToDock: (AppEntry) -> Unit,
 ) {
-    val ctx = LocalContext.current
     var menu by remember { mutableStateOf(false) }
-    var bounds by remember { mutableStateOf<Rect?>(null) }
     Box {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+        Text(
+            app.label,
+            color = if (hidden) Color.White.copy(alpha = 0.5f) else Color.White,
+            fontSize = 17.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .fillMaxWidth()
-                .onGloballyPositioned { c ->
-                    val b = c.boundsInWindow()
-                    bounds = Rect(b.left.toInt(), b.top.toInt(), b.right.toInt(), b.bottom.toInt())
-                }
-                .combinedClickable(onClick = { onLaunch(app, bounds) }, onLongClick = { menu = true })
-                .padding(vertical = 10.dp, horizontal = 4.dp),
-        ) {
-            Image(app.icon, app.label, Modifier.size(52.dp), alpha = if (hidden) 0.5f else 1f)
-            if (showLabel) {
-                Text(
-                    app.label, style = LabelStyle, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp),
-                )
+                .clip(ItemShape)
+                .background(ItemBackground)
+                .combinedClickable(onClick = { onLaunch(app, null) }, onLongClick = { menu = true })
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        )
+        if (menu) {
+            val ctx = LocalContext.current
+            DropdownMenu(expanded = true, onDismissRequest = { menu = false }) {
+                DropdownMenuItem(text = { Text("Add to dock") }, onClick = { menu = false; onAddToDock(app) })
+                DropdownMenuItem(text = { Text(if (hidden) "Unhide" else "Hide") }, onClick = {
+                    menu = false
+                    AppState.update { c -> c.copy(hiddenApps = if (hidden) c.hiddenApps - app.key else c.hiddenApps + app.key) }
+                })
+                DropdownMenuItem(text = { Text("App info") }, onClick = { menu = false; AppsRepo.appInfo(app) })
+                DropdownMenuItem(text = { Text("Uninstall") }, onClick = { menu = false; AppsRepo.uninstall(ctx, app) })
             }
-        }
-        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-            DropdownMenuItem(text = { Text("Add to dock") }, onClick = { menu = false; onAddToDock(app) })
-            DropdownMenuItem(text = { Text(if (hidden) "Unhide" else "Hide") }, onClick = {
-                menu = false
-                AppState.update { c -> c.copy(hiddenApps = if (hidden) c.hiddenApps - app.key else c.hiddenApps + app.key) }
-            })
-            DropdownMenuItem(text = { Text("App info") }, onClick = { menu = false; AppsRepo.appInfo(app) })
-            DropdownMenuItem(text = { Text("Uninstall") }, onClick = { menu = false; AppsRepo.uninstall(ctx, app) })
         }
     }
 }
