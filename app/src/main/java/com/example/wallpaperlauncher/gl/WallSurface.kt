@@ -25,9 +25,15 @@ class WallSurface {
     fun surfaceChanged(w: Int, h: Int) = thread.resize(w, h)
     fun surfaceDestroyed() = thread.clearSurface()
 
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+    // Hidden for a while (the launcher covering the live wallpaper, or the launcher in the background):
+    // free the textures instead of holding two full-screen images per surface.
+    private val purge = Runnable { thread.post { renderer.purge() } }
+
     fun setVisible(v: Boolean) {
         if (v == visible) return
         visible = v
+        main.removeCallbacks(purge)
         if (v) {
             Slideshow.acquire()
             AppState.listeners += onConfig
@@ -40,6 +46,7 @@ class WallSurface {
             AppState.listeners -= onConfig
             scope?.cancel()
             scope = null
+            main.postDelayed(purge, 10_000)
         }
     }
 
@@ -78,6 +85,7 @@ class WallSurface {
 
     fun release() {
         setVisible(false)
+        main.removeCallbacks(purge)
         thread.shutdown()
     }
 }

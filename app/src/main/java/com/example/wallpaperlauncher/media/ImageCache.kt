@@ -40,6 +40,9 @@ object ImageCache {
 
     fun get(id: Long): Bitmap? = synchronized(this) { lru[id] }
 
+    /** Drop decoded wallpapers (low memory); the renderers keep what's on screen as textures. */
+    fun clear() = synchronized(this) { lru.clear() }
+
     /** Decodes [item] if needed; [cb] runs on a worker thread (or right away if cached). */
     fun load(item: ImageItem, cb: ((Bitmap?) -> Unit)? = null) {
         val cached = synchronized(this) {
@@ -129,7 +132,12 @@ private fun ImageCache.rotate(b: Bitmap, deg: Int): Bitmap =
 
 /** Small thumbnails for the folder picker. */
 object Thumbs {
-    private val cache = LruCache<Long, Bitmap>(300)
+    // Capped by bytes, not count: 300 thumbnails could reach ~170 MB and helped push the JM21 out of memory.
+    private val cache = object : LruCache<Long, Bitmap>(16 * 1024 * 1024) {
+        override fun sizeOf(key: Long, value: Bitmap) = value.allocationByteCount
+    }
+
+    fun clear() = cache.evictAll()
 
     fun cached(id: Long): Bitmap? = cache.get(id)
 

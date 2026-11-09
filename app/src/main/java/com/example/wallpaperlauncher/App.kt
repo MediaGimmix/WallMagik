@@ -8,6 +8,7 @@ import android.content.IntentFilter
 import com.example.wallpaperlauncher.media.ImageCache
 import com.example.wallpaperlauncher.media.ImageRepo
 import com.example.wallpaperlauncher.media.Slideshow
+import com.example.wallpaperlauncher.media.Thumbs
 
 class App : Application() {
     override fun onCreate() {
@@ -23,5 +24,13 @@ class App : Application() {
                 if (AppState.config.value.nextOnWake) Slideshow.next()
             }
         }, IntentFilter(Intent.ACTION_SCREEN_ON))
+    }
+
+    @Suppress("DEPRECATION")
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        // Hidden UI or the system running low: give back what can be rebuilt.
+        if (level >= TRIM_MEMORY_RUNNING_LOW) Thumbs.clear()
+        if (level >= TRIM_MEMORY_RUNNING_CRITICAL) ImageCache.clear()
     }
 }

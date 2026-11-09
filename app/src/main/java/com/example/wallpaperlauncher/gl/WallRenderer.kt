@@ -76,6 +76,21 @@ class WallRenderer {
         fbo = ids[0]
     }
 
+    /** Free the big textures while hidden; the next setImage uploads again. */
+    fun purge() {
+        for (sl in listOf(cur, prev)) {
+            glBindTexture(GL_TEXTURE_2D, sl.tex)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, null)
+            glBindTexture(GL_TEXTURE_2D, sl.blurTex)
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, null)
+            sl.has = false; sl.id = -1; sl.bw = 0; sl.bh = 0; sl.blurRadius = -1f
+        }
+        glBindTexture(GL_TEXTURE_2D, tmpTex)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, null)
+        tmpW = 0; tmpH = 0
+        fade = 1f
+    }
+
     fun release() {
         glDeleteTextures(5, intArrayOf(cur.tex, cur.blurTex, prev.tex, prev.blurTex, tmpTex), 0)
         glDeleteFramebuffers(1, intArrayOf(fbo), 0)
