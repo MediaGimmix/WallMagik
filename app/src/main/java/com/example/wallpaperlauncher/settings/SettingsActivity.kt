@@ -63,6 +63,7 @@ import com.example.wallpaperlauncher.Config
 import com.example.wallpaperlauncher.Gesture
 import com.example.wallpaperlauncher.GestureAction
 import com.example.wallpaperlauncher.launcher.AppPickerDialog
+import com.example.wallpaperlauncher.launcher.AppIcon
 import com.example.wallpaperlauncher.launcher.AppsRepo
 import com.example.wallpaperlauncher.launcher.IconPack
 import com.example.wallpaperlauncher.launcher.toIconBitmap
@@ -74,6 +75,12 @@ import com.example.wallpaperlauncher.wallpaper.SlideWallpaperService
 import kotlin.math.roundToInt
 
 class SettingsActivity : ComponentActivity() {
+    override fun onStop() {
+        super.onStop()
+        // Folder thumbnails are only for these screens: don't keep them while the launcher runs.
+        com.example.wallpaperlauncher.media.Thumbs.clear()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -229,7 +236,7 @@ private fun HomePage(onBack: () -> Unit) {
             ) {
                 Text("${i + 1}", Modifier.width(28.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (app != null) {
-                    Image(app.icon, null, Modifier.size(36.dp))
+                    AppIcon(app, Modifier.size(36.dp))
                     Spacer(Modifier.width(14.dp))
                     Text(app.label, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     TextButton(onClick = {
@@ -287,7 +294,7 @@ private fun HiddenAppsPage(onBack: () -> Unit) {
                 }.padding(horizontal = 16.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Image(a.icon, null, Modifier.size(36.dp))
+                AppIcon(a, Modifier.size(36.dp))
                 Spacer(Modifier.width(14.dp))
                 Text(a.label, Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Checkbox(checked = hidden, onCheckedChange = null)

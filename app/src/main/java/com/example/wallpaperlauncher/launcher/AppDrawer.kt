@@ -253,7 +253,7 @@ fun AppPickerDialog(apps: List<AppEntry>, title: String, onDismiss: () -> Unit, 
                             Modifier.fillMaxWidth().clickable { onPick(a) }.padding(vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Image(a.icon, null, Modifier.size(36.dp))
+                            AppIcon(a, Modifier.size(36.dp))
                             Spacer(Modifier.width(12.dp))
                             Text(a.label, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }

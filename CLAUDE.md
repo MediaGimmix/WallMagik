@@ -26,7 +26,7 @@ Build with `source env.sh && ./gradlew --offline assembleRelease -x lintVitalAna
 - Chromatic aberration (hold) ignores the effects master switch; only its own switch gates it.
 - Home pressed while already home toggles the drawer (`HomeActivity.onNewIntent`, focus + BROUGHT_TO_FRONT test).
 - Picked folders (`Config.safFolders`, tree URIs): `ImageRepo.scanTree` walks them with DocumentsContract (works with .nomedia and SD cards); bucket id = "saf:" + tree URI, image ids negative.
-- Memory: `Thumbs` capped at 16 MB; `App.onTrimMemory` clears Thumbs/ImageCache; a hidden `WallSurface` purges its textures after 10 s. (JM21 low-memory kills once looped WallMagik restarts as home + wallpaper.)
+- Memory: `Thumbs` capped at 16 MB (cleared when Settings stops); `ImageCache` keeps 2 (current + next); the old image texture is freed after each crossfade; icons are built on demand (`AppIcon`, 6 MB LRU); `App.onTrimMemory` clears caches; a hidden `WallSurface` purges its textures after 10 s. Compile with `cmd package compile -m speed-profile -f` (profileinstaller), never `-m speed` (~+60 MB code). (JM21 low-memory kills once looped WallMagik restarts as home + wallpaper.)
 - Next on wake: `App` registers an ACTION_SCREEN_ON receiver → `Slideshow.next()` when enabled.
 - `wallpaper/SlideWallpaperService`: live wallpaper engine, no touch.
 - `settings/`: `SettingsActivity` (page stack), categories: Slideshow (+ FolderPage), Effects, Gestures,

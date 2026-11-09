@@ -9,6 +9,7 @@ import com.example.wallpaperlauncher.media.ImageCache
 import com.example.wallpaperlauncher.media.ImageRepo
 import com.example.wallpaperlauncher.media.Slideshow
 import com.example.wallpaperlauncher.media.Thumbs
+import com.example.wallpaperlauncher.launcher.AppsRepo
 
 class App : Application() {
     override fun onCreate() {
@@ -30,7 +31,10 @@ class App : Application() {
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         // Hidden UI or the system running low: give back what can be rebuilt.
-        if (level >= TRIM_MEMORY_RUNNING_LOW) Thumbs.clear()
+        if (level >= TRIM_MEMORY_RUNNING_LOW) {
+            Thumbs.clear()
+            AppsRepo.trim()
+        }
         if (level >= TRIM_MEMORY_RUNNING_CRITICAL) ImageCache.clear()
     }
 }

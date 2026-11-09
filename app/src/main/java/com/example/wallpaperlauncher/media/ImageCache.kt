@@ -25,7 +25,7 @@ object ImageCache {
     private lateinit var resolver: ContentResolver
     private val exec = Executors.newFixedThreadPool(2)
     private val lru = LinkedHashMap<Long, Bitmap>(8, 0.75f, true)
-    private const val MAX = 4
+    private const val MAX = 2   // the image on screen + the next one (prefetched)
     private val waiting = HashMap<Long, MutableList<(Bitmap?) -> Unit>>()
 
     @Volatile private var shortSide = 1080

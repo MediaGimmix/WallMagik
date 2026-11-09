@@ -76,15 +76,18 @@ class WallRenderer {
         fbo = ids[0]
     }
 
+    private fun shrink(sl: Slot) {
+        glBindTexture(GL_TEXTURE_2D, sl.tex)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, null)
+        glBindTexture(GL_TEXTURE_2D, sl.blurTex)
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, null)
+        sl.has = false; sl.id = -1; sl.bw = 0; sl.bh = 0; sl.blurRadius = -1f
+    }
+
     /** Free the big textures while hidden; the next setImage uploads again. */
     fun purge() {
-        for (sl in listOf(cur, prev)) {
-            glBindTexture(GL_TEXTURE_2D, sl.tex)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, null)
-            glBindTexture(GL_TEXTURE_2D, sl.blurTex)
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, null)
-            sl.has = false; sl.id = -1; sl.bw = 0; sl.bh = 0; sl.blurRadius = -1f
-        }
+        shrink(cur)
+        shrink(prev)
         glBindTexture(GL_TEXTURE_2D, tmpTex)
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, null)
         tmpW = 0; tmpH = 0
@@ -117,7 +120,7 @@ class WallRenderer {
         val cfg = AppState.config.value
         fadeMs = min(cfg.transitionMs.toFloat(), cfg.intervalMs * 0.8f)
         fade = if (prev.has && fadeMs > 16f) 0f else 1f
-        if (fade >= 1f) prev.has = false
+        if (fade >= 1f && prev.has) shrink(prev)
     }
 
     private fun upload(s: Slot, bmp: Bitmap) {
@@ -183,7 +186,11 @@ class WallRenderer {
         duoAmt = approach(duoAmt, duoTarget, dt / 280f)
         caAmt = approach(caAmt, caTarget, dt / (if (hold) 220f else 160f))
         if (fade < 1f) fade = if (fadeMs <= 0f) 1f else min(1f, fade + dt / fadeMs)
-        if (fade >= 1f) prev.has = false
+        if (fade >= 1f && prev.has) {
+            // Crossfade done: the old image's textures aren't needed until the next change.
+            prev.has = false
+            shrink(prev)
+        }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0)
         if (!cur.has) {

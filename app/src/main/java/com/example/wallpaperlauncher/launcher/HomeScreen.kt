@@ -229,7 +229,7 @@ private fun Dock(cfg: Config, apps: List<AppEntry>, modifier: Modifier) {
                             onLongClick = { menu = true },
                         ),
                 ) {
-                    Image(app.icon, app.label, Modifier.size(cfg.dockIconDp.dp))
+                    AppIcon(app, Modifier.size(cfg.dockIconDp.dp))
                     if (cfg.dockLabels) {
                         Text(app.label, style = LabelStyle, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
